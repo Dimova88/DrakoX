@@ -1,0 +1,13 @@
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+# DrakoX local runtime state (project-level settings are committed; local state is not)
+.drakox/worktrees/
+.drakox/local/
+.drakox/settings.local.json
+/tmp-*
