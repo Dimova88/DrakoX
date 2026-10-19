@@ -2,6 +2,7 @@ import type { DrakoxConfig, ProviderConfig } from '../types.js';
 import type { Credentials } from '../config.js';
 import { splitModelRef } from '../models.js';
 import { AnthropicProvider } from './anthropic.js';
+import { GeminiProvider } from './gemini.js';
 import { PROVIDER_PRESETS, getPreset, type ProviderPreset } from './catalog.js';
 import { DemoProvider } from './demo.js';
 import { OllamaProvider } from './ollama.js';
@@ -102,6 +103,9 @@ export class ProviderRegistry {
       case 'anthropic':
         p = new AnthropicProvider(id, { baseURL: cfg.baseURL, apiKey: cfg.apiKey, headers: cfg.headers });
         break;
+      case 'gemini':
+        p = new GeminiProvider(id, { baseURL: cfg.baseURL, apiKey: cfg.apiKey, headers: cfg.headers });
+        break;
       case 'ollama':
         p = new OllamaProvider(id, { baseURL: cfg.baseURL, numCtx: cfg.numCtx, headers: cfg.headers });
         break;
@@ -142,7 +146,7 @@ export class ProviderRegistry {
     const envOrder: [string, string][] = [
       ['anthropic', 'claude-sonnet-4-5'],
       ['openai', 'gpt-5'],
-      ['gemini', 'gemini-2.5-flash'],
+      ['gemini', 'gemini-flash-latest'],
       ['openrouter', 'qwen/qwen3-coder:free'],
       ['groq', 'openai/gpt-oss-120b'],
       ['deepseek', 'deepseek-chat'],

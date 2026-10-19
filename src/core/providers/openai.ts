@@ -3,6 +3,7 @@ import { parseSSE } from './sse.js';
 import {
   ProviderError,
   isRetryableStatus,
+  providerFetch,
   parseToolArgs,
   readErrorBody,
   type ModelInfo,
@@ -13,7 +14,7 @@ import {
 
 /**
  * OpenAI-compatible Chat Completions adapter.
- * Works with OpenAI, OpenRouter, Groq, Gemini (OpenAI endpoint), Mistral, DeepSeek, xAI, Together,
+ * Works with OpenAI, OpenRouter, Groq, Mistral, DeepSeek, xAI, Together,
  * Fireworks, Cerebras, GitHub Models, LM Studio, llama.cpp server, vLLM, Ollama `/v1` and more.
  */
 export class OpenAICompatibleProvider implements Provider {
@@ -55,24 +56,18 @@ export class OpenAICompatibleProvider implements Provider {
     if (req.temperature != null) body.temperature = req.temperature;
     if (req.reasoningEffort && isOpenAI) body.reasoning_effort = req.reasoningEffort;
 
-    let res: Response;
-    try {
-      res = await fetch(this.url('/chat/completions'), {
-        method: 'POST',
-        headers: this.headers(),
-        body: JSON.stringify(body),
-        signal: req.signal,
-      });
-    } catch (err) {
-      if ((err as Error).name === 'AbortError') throw err;
-      throw new ProviderError(`Cannot reach ${this.id} at ${this.opts.baseURL}: ${(err as Error).message}`, undefined, true);
-    }
+    let res = await providerFetch(this.id, this.url('/chat/completions'), {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify(body),
+      signal: req.signal,
+    });
     if (!res.ok || !res.body) {
       const msg = await readErrorBody(res);
       // Some providers reject stream_options; retry once without it.
       if (res.status === 400 && /stream_options/i.test(msg)) {
         delete body.stream_options;
-        res = await fetch(this.url('/chat/completions'), { method: 'POST', headers: this.headers(), body: JSON.stringify(body), signal: req.signal });
+        res = await providerFetch(this.id, this.url('/chat/completions'), { method: 'POST', headers: this.headers(), body: JSON.stringify(body), signal: req.signal });
         if (!res.ok || !res.body) throw new ProviderError(`${this.id}: ${await readErrorBody(res)}`, res.status, isRetryableStatus(res.status));
       } else {
         throw new ProviderError(`${this.id} (${res.status}): ${msg}`, res.status, isRetryableStatus(res.status));
@@ -164,7 +159,7 @@ export class OpenAICompatibleProvider implements Provider {
   }
 
   async listModels(signal?: AbortSignal): Promise<ModelInfo[]> {
-    const res = await fetch(this.url('/models'), { headers: this.headers(), signal });
+    const res = await providerFetch(this.id, this.url('/models'), { headers: this.headers(), signal });
     if (!res.ok) throw new ProviderError(`${this.id}: ${await readErrorBody(res)}`, res.status);
     const j: any = await res.json();
     const list: any[] = Array.isArray(j?.data) ? j.data : Array.isArray(j?.models) ? j.models : Array.isArray(j) ? j : [];
@@ -184,7 +179,7 @@ export class OpenAICompatibleProvider implements Provider {
 
   async complete(opts: { model: string; prompt: string; suffix?: string; maxTokens?: number; stop?: string[]; signal?: AbortSignal }): Promise<string> {
     // Prefer a chat request instructing the model to fill the gap — works everywhere.
-    const res = await fetch(this.url('/chat/completions'), {
+    const res = await providerFetch(this.id, this.url('/chat/completions'), {
       method: 'POST',
       headers: this.headers(),
       signal: opts.signal,

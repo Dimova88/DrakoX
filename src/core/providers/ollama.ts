@@ -1,6 +1,6 @@
 import type { ChatMessage, ToolCall, Usage } from '../types.js';
 import { parseNDJSON } from './sse.js';
-import { ProviderError, readErrorBody, type ModelInfo, type ModelRequest, type Provider, type StreamEvent } from './types.js';
+import { ProviderError, providerFetch, readErrorBody, type ModelInfo, type ModelRequest, type Provider, type StreamEvent } from './types.js';
 import { uid } from '../util.js';
 
 /**
@@ -31,15 +31,15 @@ export class OllamaProvider implements Provider {
     }
     let res: Response;
     try {
-      res = await fetch(`${this.base()}/api/chat`, {
+      res = await providerFetch(this.id, `${this.base()}/api/chat`, {
         method: 'POST',
         headers: { 'content-type': 'application/json', ...(this.opts.headers ?? {}) },
         body: JSON.stringify(body),
         signal: req.signal,
       });
     } catch (err) {
-      if ((err as Error).name === 'AbortError') throw err;
-      throw new ProviderError(`Cannot reach Ollama at ${this.base()} — is it running? (ollama serve)`, undefined, true);
+      if (err instanceof ProviderError && err.kind === 'network') throw new ProviderError(`${err.message} Start Ollama with \`ollama serve\` (or set OLLAMA_HOST).`, undefined, true, 'network');
+      throw err;
     }
     if (!res.ok || !res.body) {
       const msg = await readErrorBody(res);
@@ -108,7 +108,7 @@ export class OllamaProvider implements Provider {
   }
 
   async listModels(signal?: AbortSignal): Promise<ModelInfo[]> {
-    const res = await fetch(`${this.base()}/api/tags`, { signal, headers: this.opts.headers });
+    const res = await providerFetch(this.id, `${this.base()}/api/tags`, { signal, headers: this.opts.headers });
     if (!res.ok) throw new ProviderError(`ollama: ${await readErrorBody(res)}`, res.status);
     const j: any = await res.json();
     return (j.models ?? []).map((m: any) => ({
@@ -120,7 +120,7 @@ export class OllamaProvider implements Provider {
 
   async complete(opts: { model: string; prompt: string; suffix?: string; maxTokens?: number; stop?: string[]; signal?: AbortSignal }): Promise<string> {
     // Native fill-in-the-middle for FIM-capable models (qwen2.5-coder, codestral, starcoder2, deepseek-coder…)
-    const res = await fetch(`${this.base()}/api/generate`, {
+    const res = await providerFetch(this.id, `${this.base()}/api/generate`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...(this.opts.headers ?? {}) },
       signal: opts.signal,

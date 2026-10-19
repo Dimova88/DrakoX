@@ -1,4 +1,5 @@
 import TurndownService from 'turndown';
+import { describeNetworkError } from '../providers/types.js';
 import { truncateMiddle } from '../util.js';
 import type { WebSearchConfig } from '../types.js';
 import { errorResult, textResult, type Tool } from './types.js';
@@ -49,7 +50,8 @@ export const webFetchTool: Tool<{ url: string; max_chars?: number }> = {
     try {
       res = await fetch(url, { headers: { 'user-agent': UA, accept: 'text/html,application/json,text/plain,*/*' }, redirect: 'follow', signal: AbortSignal.any([ctx.signal, timeout]) });
     } catch (err) {
-      return errorResult(`Fetch failed: ${(err as Error).message}`);
+      if (ctx.signal.aborted) return errorResult('Interrupted by the user.');
+      return errorResult(describeNetworkError(err, url.href));
     }
     const type = res.headers.get('content-type') ?? '';
     const max = Math.min(200_000, Math.max(1000, a.max_chars ?? 40_000));
@@ -118,7 +120,7 @@ export const webSearchTool: Tool<{ query: string; count?: number }> = {
         results = (j.results ?? []).slice(0, n).map((x: any) => ({ title: x.title, url: x.url, snippet: x.content ?? '' }));
       }
     } catch (err) {
-      return errorResult(`Search failed: ${(err as Error).message}`);
+      return errorResult(`Search failed: ${(err as Error).name === 'TypeError' ? describeNetworkError(err, cfg.baseURL ?? `https://${cfg.provider}`) : (err as Error).message}`);
     }
     if (!results.length) return textResult('No results.');
     const body = results.map((r, i) => `${i + 1}. ${r.title}\n   ${r.url}\n   ${r.snippet.replace(/\s+/g, ' ').slice(0, 300)}`).join('\n\n');

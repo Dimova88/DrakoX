@@ -29,6 +29,8 @@ export interface ToolCall {
 /** Opaque provider-specific data that must round-trip (e.g. Anthropic thinking signatures). */
 export interface ProviderMeta {
   anthropicThinking?: { thinking: string; signature: string }[];
+  /** Gemini's raw response parts (incl. thought signatures) — replayed verbatim on the next request */
+  geminiParts?: unknown[];
 }
 
 export type ChatMessage =
@@ -214,7 +216,7 @@ export interface WorktreeInfo {
 
 // ───────────────────────────── Configuration ─────────────────────────────
 
-export type ProviderType = 'openai' | 'anthropic' | 'ollama' | 'demo';
+export type ProviderType = 'openai' | 'anthropic' | 'gemini' | 'ollama' | 'demo';
 
 export interface ProviderConfig {
   type: ProviderType;

@@ -40,15 +40,22 @@ export function Onboarding() {
     setBusy(true);
     try {
       await put(`/api/providers/${id}`, { apiKey: key.trim() });
-      const t = await post<{ ok: boolean; error?: string; sample?: string[] }>(`/api/providers/${id}/test`);
-      if (!t.ok) throw new Error(t.error ?? 'Key test failed');
+      setKey('');
+      const t = await post<{ ok: boolean; error?: string; kind?: string; sample?: string[]; recommended?: string }>(`/api/providers/${id}/test`);
+      if (!t.ok) {
+        if (t.kind === 'network') {
+          // the key is fine as far as we know — the machine running DrakoX just can't reach the provider
+          toast.warning(`Key saved, but DrakoX can't connect right now. ${t.error ?? ''}`, { duration: 15000 });
+          return;
+        }
+        throw new Error(t.kind === 'auth' ? `The key was rejected. ${t.error ?? ''} Paste another key to replace it.` : t.error ?? 'Key test failed');
+      }
       await refresh(true);
-      const p = useStore.getState().providers.find((x) => x.id === id);
-      const model = p?.recommended ?? p?.models[0]?.id ?? t.sample?.[0];
+      const model = t.recommended ?? t.sample?.[0];
       if (model) await useModel(`${id}/${model}`);
       else setOpen(false);
     } catch (e) {
-      toast.error((e as Error).message);
+      toast.error((e as Error).message, { duration: 15000 });
     } finally {
       setBusy(false);
     }

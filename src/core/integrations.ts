@@ -3,6 +3,7 @@ import { buildCatalogConfig, catalogEntry } from './mcp/catalog.js';
 import type { McpServerConfig } from './types.js';
 import { readJson, writeJson } from './util.js';
 import path from 'node:path';
+import { describeNetworkError } from './providers/types.js';
 
 /**
  * Add / remove / toggle integrations (MCP servers) in the right config layer, keeping secrets in
@@ -149,7 +150,13 @@ export const REGISTRY_URL = 'https://registry.modelcontextprotocol.io/v0/servers
 
 export async function searchRegistry(query: string, limit = 30, signal?: AbortSignal): Promise<RegistryServer[]> {
   const url = `${REGISTRY_URL}?search=${encodeURIComponent(query)}&limit=${limit}&version=latest`;
-  const res = await fetch(url, { signal: signal ?? AbortSignal.timeout(15000), headers: { accept: 'application/json' } });
+  let res: Response;
+  try {
+    res = await fetch(url, { signal: signal ?? AbortSignal.timeout(15000), headers: { accept: 'application/json' } });
+  } catch (err) {
+    if ((err as Error)?.name === 'AbortError') throw err;
+    throw new Error(describeNetworkError(err, url, 'MCP Registry'));
+  }
   if (!res.ok) throw new Error(`MCP Registry returned ${res.status}`);
   const data: any = await res.json();
   const list: any[] = data.servers ?? data.data ?? [];

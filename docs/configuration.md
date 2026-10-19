@@ -16,7 +16,7 @@ command-line flags. Permission lists **accumulate** across layers. `DRAKOX_HOME`
 | `permissions.allow / ask / deny` | rules | `[]` | e.g. `bash(npm test*)`, `edit_file(src/**)`, `web_fetch(domain:x.com)`, `mcp__srv__*` |
 | `permissions.sensitivePaths` | globs | `.env`, keys… | Always ask before reading/writing |
 | `permissions.sandboxNetwork` | bool | `false` | Network inside the sandbox |
-| `providers.<id>` | object | presets | `{ type: "openai" \| "anthropic" \| "ollama", baseURL, apiKey, models, headers, enabled }` |
+| `providers.<id>` | object | presets | `{ type: "openai" \| "anthropic" \| "gemini" \| "ollama", baseURL, apiKey, models, headers, enabled }` — `gemini` is the native Gemini API (works with AI Studio's "AQ." keys) |
 | `mcpServers.<name>` | object | – | `{ command, args, env, cwd }` or `{ url, headers, oauth }`, plus `disabled`, `autoApprove`, `timeoutMs` |
 | `mcpToolSearch` | `auto \| on \| off` | `auto` | Defer large integration tool sets behind `tool_search` |
 | `hooks.<Event>` | list | – | `PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `Stop`, `SessionStart`, `SessionEnd`, `Notification`: `{ matcher, command, timeoutMs }` |

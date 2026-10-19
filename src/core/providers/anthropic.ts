@@ -5,6 +5,7 @@ import {
   isRetryableStatus,
   parseToolArgs,
   readErrorBody,
+  providerFetch,
   type ModelInfo,
   type ModelRequest,
   type Provider,
@@ -51,13 +52,7 @@ export class AnthropicProvider implements Provider {
     if (thinkingBudget) body.thinking = { type: 'enabled', budget_tokens: thinkingBudget };
     else if (req.temperature != null) body.temperature = req.temperature;
 
-    let res: Response;
-    try {
-      res = await fetch(`${this.base()}/v1/messages`, { method: 'POST', headers: this.headers(), body: JSON.stringify(body), signal: req.signal });
-    } catch (err) {
-      if ((err as Error).name === 'AbortError') throw err;
-      throw new ProviderError(`Cannot reach Anthropic: ${(err as Error).message}`, undefined, true);
-    }
+    const res = await providerFetch(this.id, `${this.base()}/v1/messages`, { method: 'POST', headers: this.headers(), body: JSON.stringify(body), signal: req.signal });
     if (!res.ok || !res.body) {
       throw new ProviderError(`${this.id} (${res.status}): ${await readErrorBody(res)}`, res.status, isRetryableStatus(res.status));
     }
@@ -120,14 +115,14 @@ export class AnthropicProvider implements Provider {
   }
 
   async listModels(signal?: AbortSignal): Promise<ModelInfo[]> {
-    const res = await fetch(`${this.base()}/v1/models?limit=100`, { headers: this.headers(), signal });
+    const res = await providerFetch(this.id, `${this.base()}/v1/models?limit=100`, { headers: this.headers(), signal });
     if (!res.ok) throw new ProviderError(`${this.id}: ${await readErrorBody(res)}`, res.status);
     const j: any = await res.json();
     return (j.data ?? []).map((m: any) => ({ id: m.id, name: m.display_name, contextWindow: 200_000, tools: true, vision: true }));
   }
 
   async complete(opts: { model: string; prompt: string; suffix?: string; maxTokens?: number; stop?: string[]; signal?: AbortSignal }): Promise<string> {
-    const res = await fetch(`${this.base()}/v1/messages`, {
+    const res = await providerFetch(this.id, `${this.base()}/v1/messages`, {
       method: 'POST',
       headers: this.headers(),
       signal: opts.signal,

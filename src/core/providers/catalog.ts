@@ -87,14 +87,15 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
   {
     id: 'gemini',
     name: 'Google Gemini',
-    type: 'openai',
-    baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai',
+    // native API: works with the current "AQ." AI Studio keys (the OpenAI-compatible endpoint rejects them)
+    type: 'gemini',
+    baseURL: 'https://generativelanguage.googleapis.com/v1beta',
     apiKeyEnv: ['GEMINI_API_KEY', 'GOOGLE_API_KEY'],
     category: 'free',
     description: 'Gemini models via Google AI Studio. Generous free tier, 1M-token context.',
     signupUrl: 'https://aistudio.google.com/apikey',
-    models: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.5-flash-lite'],
-    recommended: 'gemini-2.5-flash',
+    models: ['gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-2.5-flash', 'gemini-2.5-pro'],
+    recommended: 'gemini-flash-latest',
   },
   {
     id: 'groq',

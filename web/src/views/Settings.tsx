@@ -126,9 +126,11 @@ function ProviderCard({ p }: { p: ProviderStatus }) {
     setBusy(true);
     try {
       await put(`/api/providers/${encodeURIComponent(p.id)}`, body);
-      const t = await post<{ ok: boolean; models?: number; error?: string }>(`/api/providers/${encodeURIComponent(p.id)}/test`);
-      t.ok ? toast.success(`${p.name}: connected · ${t.models} models`) : toast.error(`${p.name}: ${t.error}`);
       setKey('');
+      const t = await post<{ ok: boolean; models?: number; error?: string; kind?: string }>(`/api/providers/${encodeURIComponent(p.id)}/test`);
+      if (t.ok) toast.success(`${p.name}: connected · ${t.models} models`);
+      else if (t.kind === 'network') toast.warning(`${p.name}: saved, but DrakoX can't connect right now. ${t.error ?? ''}`, { duration: 15000 });
+      else toast.error(`${p.name}: ${t.error}`, { duration: 15000 });
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -147,7 +149,11 @@ function ProviderCard({ p }: { p: ProviderStatus }) {
           </div>
           <div className="mt-0.5 text-[12px] text-muted">{p.description}</div>
           {local && p.reachable === false && <div className="mt-1 text-[11.5px] text-faint">Not running at {p.baseURL}</div>}
-          {p.error && !local && <div className="mt-1 truncate text-[11.5px] text-bad">{p.error}</div>}
+          {p.error && !local && (
+            <div title={p.error} className="mt-1 line-clamp-3 text-[11.5px] text-bad">
+              {p.error}
+            </div>
+          )}
         </div>
       </div>
       <div className="mt-3 space-y-2">

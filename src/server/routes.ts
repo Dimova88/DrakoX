@@ -502,9 +502,14 @@ function registerSettingsRoutes(r: Router, d: RouteDeps): void {
     try {
       const p = rt.providers.get(params.id!);
       const models = (await p.listModels?.(AbortSignal.timeout(10000))) ?? [];
-      return { ok: true, models: models.length, sample: models.slice(0, 5).map((m) => m.id) };
+      const ids = models.map((m) => m.id);
+      const preferred = PROVIDER_PRESETS.find((x) => x.id === params.id)?.recommended;
+      // suggest a default that this key can really use (Flash-class first for Gemini's free tier)
+      const recommended = (preferred && ids.includes(preferred) ? preferred : undefined) ?? ids.find((m) => /flash/.test(m) && !/lite/.test(m)) ?? ids[0];
+      return { ok: true, models: models.length, sample: ids.slice(0, 5), recommended };
     } catch (err) {
-      return { ok: false, error: (err as Error).message };
+      // kind: network = host unreachable · auth = key rejected · http = other API error
+      return { ok: false, error: (err as Error).message, kind: (err as { kind?: string }).kind ?? 'other' };
     }
   });
 
@@ -602,7 +607,7 @@ function registerSettingsRoutes(r: Router, d: RouteDeps): void {
     try {
       return await searchRegistry(q, 30);
     } catch (err) {
-      throw new HttpError(502, `MCP Registry unavailable: ${(err as Error).message}`);
+      throw new HttpError(502, (err as Error).message);
     }
   });
 
