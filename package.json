@@ -52,6 +52,7 @@
     "dev:ui": "tsx src/cli/index.ts ui --no-open",
     "dev:web": "vite --config web/vite.config.ts",
     "start": "node dist/cli/index.js",
+    "demo": "node scripts/demo.mjs",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p web/tsconfig.json --noEmit"
   },

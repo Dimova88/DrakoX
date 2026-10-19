@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Acme Shop</title>
+  </head>
+  <body>
+    <h1>Acme Shop</h1>
+    <ul id="products"></ul>
+    <script type="module">
+      const list = document.getElementById('products');
+      const items = await (await fetch('/api/products')).json();
+      for (const p of items) {
+        const li = document.createElement('li');
+        li.textContent = `${p.name} — $${p.price}`;
+        list.append(li);
+      }
+    </script>
+  </body>
+</html>

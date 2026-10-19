@@ -1,0 +1,11 @@
+{
+  "name": "acme-shop",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "description": "A tiny storefront used to try DrakoX",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test"
+  }
+}

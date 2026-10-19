@@ -60,6 +60,9 @@ drakox              # or the terminal agent
 No model configured yet? DrakoX starts with an **offline demo model**, so you can explore the
 whole UI immediately. Then connect a real model, as described in the next section.
 
+Want something to try it on? `npm run demo` opens DrakoX on a copy of
+[`examples/acme-shop`](examples/acme-shop), a tiny storefront with a failing test to fix.
+
 ## Free & unlimited, for real
 
 DrakoX is MIT-licensed, needs no account, and imposes **no** quotas, credits or rate limits.
